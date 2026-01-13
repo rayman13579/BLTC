@@ -20,12 +20,13 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <configurationType implementation="at.rayman.runafterdependency.DependentRunConfigurationType"/>
-        <stepsBeforeRunProvider implementation="at.rayman.runafterdependency.beforelaunch.TextTriggerBeforeRunProvider" />
+        <stepsBeforeRunProvider implementation="at.rayman.runafterdependency.TextTriggerBeforeRunProvider" />
         <notificationGroup id="BeforeLaunchTextTrigger" displayType="BALLOON" />
+        <runConfigurationExtension implementation="at.rayman.runafterdependency.TextTriggerRunConfigExtension" />
     </extensions>
 </idea-plugin>
