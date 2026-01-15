@@ -49,7 +49,7 @@ public final class TextTriggerBeforeRunProvider
         extends BeforeRunTaskProvider<TextTriggerBeforeRunProvider.RunConfigurableBeforeRunTask>
         implements DumbAware {
 
-    public static final Key<RunConfigurableBeforeRunTask> ID = Key.create("RunConfigurationTask");
+    public static final Key<RunConfigurableBeforeRunTask> ID = Key.create("TextTriggerRunConfigurationTask");
 
     private static final Logger LOG = Logger.getInstance(TextTriggerBeforeRunProvider.class);
 

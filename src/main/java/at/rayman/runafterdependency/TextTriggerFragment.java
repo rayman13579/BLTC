@@ -12,6 +12,7 @@ public class TextTriggerFragment<T extends RunConfigurationBase<?>> extends Sett
 
     public TextTriggerFragment() {
         super("BeforeLaunchTextTrigger", "Trigger text", "Before Launch",
+                //TODO add dropdown for contains/startsWith/endsWith/exact
                 LabeledComponent.create(new JTextField(), "Trigger text:", BorderLayout.WEST),
                 (config, panel) -> {
                 },
