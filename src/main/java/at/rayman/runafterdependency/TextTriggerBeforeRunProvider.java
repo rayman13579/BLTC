@@ -164,10 +164,10 @@ public final class TextTriggerBeforeRunProvider
             LOG.info("Cannot find run configuration '" + task.typeNameTarget.getName() + "' configured as 'Before launch' task in '" + env.getRunProfile().getName() + "', task is skipped");
             return true; // ignore missing configurations: IDEA-155476 Run/debug silently fails when 'Run another configuration' step is broken
         }
-        return doExecuteTask(env, settings.first, settings.second);
+        return doExecuteTask(env, settings.first, settings.second, task.getTriggerText());
     }
 
-    public static boolean doExecuteTask(final @NotNull ExecutionEnvironment env, final @NotNull RunnerAndConfigurationSettings settings, final @Nullable ExecutionTarget target) {
+    public static boolean doExecuteTask(final @NotNull ExecutionEnvironment env, final @NotNull RunnerAndConfigurationSettings settings, final @Nullable ExecutionTarget target, String triggerText) {
         RunConfiguration configuration = settings.getConfiguration();
         Executor executor = configuration instanceof BeforeRunTaskAwareConfiguration && ((BeforeRunTaskAwareConfiguration) configuration).useRunExecutor() ? DefaultRunExecutor.getRunExecutorInstance() : env.getExecutor();
         final String executorId = executor.getId();
@@ -206,11 +206,11 @@ public final class TextTriggerBeforeRunProvider
         } else {
             beforeRun(environment);
             LOG.debug("Starting 'Before launch' task '" + settings.getName() + "' in '" + env.getRunProfile().getName() + "'");
-            return doRunTask(executorId, environment, environment.getRunner());
+            return doRunTask(executorId, environment, environment.getRunner(), triggerText);
         }
     }
 
-    public static boolean doRunTask(final String executorId, final ExecutionEnvironment environment, ProgramRunner<?> runner) {
+    public static boolean doRunTask(final String executorId, final ExecutionEnvironment environment, ProgramRunner<?> runner, String triggerText) {
         final Semaphore targetDone = new Semaphore();
         final Ref<Boolean> result = new Ref<>(false);
         final Disposable disposable = Disposer.newDisposable();
@@ -218,7 +218,7 @@ public final class TextTriggerBeforeRunProvider
         ProcessListener outputListener = new ProcessListener() {
             @Override
             public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
-                if (event.getText().contains("start now")) {
+                if (event.getText().contains(triggerText)) {
                     result.set(true);
                     targetDone.up();
                 }
@@ -287,11 +287,20 @@ public final class TextTriggerBeforeRunProvider
 
     public final class RunConfigurableBeforeRunTask extends BeforeRunTask<RunConfigurableBeforeRunTask> {
         private final TypeNameTarget typeNameTarget = new TypeNameTarget();
+        private String triggerText = "";
 
         private Pair<@Nullable RunnerAndConfigurationSettings, @Nullable ExecutionTarget> mySettingsWithTarget;
 
         RunConfigurableBeforeRunTask() {
             super(ID);
+        }
+
+        public String getTriggerText() {
+            return triggerText;
+        }
+
+        public void setTriggerText(String triggerText) {
+            this.triggerText = triggerText;
         }
 
         @Override
@@ -306,6 +315,9 @@ public final class TextTriggerBeforeRunProvider
             if (typeNameTarget.getTargetId() != null) {
                 element.setAttribute("run_configuration_target", typeNameTarget.getTargetId());
             }
+            if (triggerText != null) {
+                element.setAttribute("trigger_text", triggerText);
+            }
         }
 
         @Override
@@ -315,6 +327,7 @@ public final class TextTriggerBeforeRunProvider
             typeNameTarget.setName(element.getAttributeValue("run_configuration_name"));
             typeNameTarget.setType(element.getAttributeValue("run_configuration_type"));
             typeNameTarget.setTargetId(element.getAttributeValue("run_configuration_target"));
+            triggerText = element.getAttributeValue("trigger_text");
 
             mySettingsWithTarget = null;
         }
@@ -408,6 +421,7 @@ public final class TextTriggerBeforeRunProvider
             task.typeNameTarget.setType(typeNameTarget.getType());
             task.typeNameTarget.setName(typeNameTarget.getName());
             task.typeNameTarget.setTargetId(typeNameTarget.getTargetId());
+            task.triggerText = triggerText;
             return task;
         }
 
