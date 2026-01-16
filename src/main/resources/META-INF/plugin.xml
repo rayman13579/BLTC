@@ -1,21 +1,27 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
-    <id>at.rayman.run-after-dependency</id>
+    <id>at.rayman.bltc</id>
 
     <!-- Public plugin name should be written in Title Case.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-name -->
-    <name>Run-after-dependency</name>
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>BLTC</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor url="https://www.yourcompany.com">YourCompany</vendor>
+    <vendor email="mail@rayman.me">rayman13579</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-description -->
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-        Enter short description for your plugin here.<br>
-        <em>most HTML tags may be used</em>
+        <p>BLTC - Before Launch Text Condition</p>
+        <p>Enables a run configuration to start when the Before Launch task's output matches a condition.</p>
     ]]></description>
+    <change-notes><![CDATA[
+        <ul>
+          <li>Initial release</li>
+        </ul>
+    ]]></change-notes>
 
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
@@ -25,8 +31,8 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <stepsBeforeRunProvider implementation="at.rayman.runafterdependency.TextTriggerBeforeRunProvider" />
-        <notificationGroup id="BeforeLaunchTextTrigger" displayType="BALLOON" />
-        <runConfigurationExtension implementation="at.rayman.runafterdependency.TextTriggerRunConfigExtension" />
+        <stepsBeforeRunProvider implementation="at.rayman.bltc.TextConditionBeforeRunProvider" />
+        <notificationGroup id="TextConditionBeforeRun" displayType="BALLOON" />
+        <runConfigurationExtension implementation="at.rayman.bltc.TextConditionRunConfigExtension" />
     </extensions>
 </idea-plugin>

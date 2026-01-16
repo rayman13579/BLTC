@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "at.rayman"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 repositories {
     mavenCentral()
@@ -27,26 +27,39 @@ dependencies {
 
 intellijPlatform {
     pluginConfiguration {
+        name = "BLTC"
         ideaVersion {
-            sinceBuild = "251"
+            sinceBuild = "231"
         }
+    }
+    pluginVerification {
+        ides {
+            select {
+                sinceBuild = "231"
+                untilBuild = ""
+            }
+        }
+    }
+    signing {
+        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
+        privateKey.set(System.getenv("PRIVATE_KEY"))
+        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
+    }
 
-        changeNotes = """
-            Initial version
-        """.trimIndent()
+    publishing {
+        token.set(System.getenv("PUBLISH_TOKEN"))
     }
 }
 
 tasks {
-    // Set the JVM compatibility versions
     withType<JavaCompile> {
-        sourceCompatibility = "21"
-        targetCompatibility = "21"
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
     }
 }
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }

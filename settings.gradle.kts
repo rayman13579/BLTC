@@ -1,1 +1,1 @@
-rootProject.name = "run-after-dependency"
+rootProject.name = "bltc"

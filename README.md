@@ -1,0 +1,1 @@
+Intellij plugin that adds a Before Launch Task that enables a run configuration to start when the Before Launch task's output matches a condition
