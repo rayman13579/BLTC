@@ -5,11 +5,10 @@ build/
 !**/src/test/**/build/
 .kotlin
 
+.run
+
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea
 *.iws
 *.iml
 *.ipr
