@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.BiPredicate;
 
 /**
  * @author Vassiliy Kudryashov
@@ -52,6 +53,13 @@ public final class TextTriggerBeforeRunProvider
     public static final Key<RunConfigurableBeforeRunTask> ID = Key.create("TextTriggerRunConfigurationTask");
 
     private static final Logger LOG = Logger.getInstance(TextTriggerBeforeRunProvider.class);
+
+    private static final String TRIGGER_CONDITION_ERROR = "Trigger Condition not fulfilled, cancelling execution";
+
+    private static final Notification TRIGGER_CONDITION_NOTIFICATION = NotificationGroupManager.getInstance()
+            .getNotificationGroup("BeforeLaunchTextTrigger")
+            .createNotification("BeforeLaunchTextTrigger", TRIGGER_CONDITION_ERROR, NotificationType.WARNING)
+            .setIcon(AllIcons.RunConfigurations.TestState.Yellow2);
 
     private final Project myProject;
 
@@ -164,10 +172,10 @@ public final class TextTriggerBeforeRunProvider
             LOG.info("Cannot find run configuration '" + task.typeNameTarget.getName() + "' configured as 'Before launch' task in '" + env.getRunProfile().getName() + "', task is skipped");
             return true; // ignore missing configurations: IDEA-155476 Run/debug silently fails when 'Run another configuration' step is broken
         }
-        return doExecuteTask(env, settings.first, settings.second, task.getTriggerText());
+        return doExecuteTask(env, settings.first, settings.second, task);
     }
 
-    public static boolean doExecuteTask(final @NotNull ExecutionEnvironment env, final @NotNull RunnerAndConfigurationSettings settings, final @Nullable ExecutionTarget target, String triggerText) {
+    public static boolean doExecuteTask(final @NotNull ExecutionEnvironment env, final @NotNull RunnerAndConfigurationSettings settings, final @Nullable ExecutionTarget target, RunConfigurableBeforeRunTask task) {
         RunConfiguration configuration = settings.getConfiguration();
         Executor executor = configuration instanceof BeforeRunTaskAwareConfiguration && ((BeforeRunTaskAwareConfiguration) configuration).useRunExecutor() ? DefaultRunExecutor.getRunExecutorInstance() : env.getExecutor();
         final String executorId = executor.getId();
@@ -206,19 +214,30 @@ public final class TextTriggerBeforeRunProvider
         } else {
             beforeRun(environment);
             LOG.debug("Starting 'Before launch' task '" + settings.getName() + "' in '" + env.getRunProfile().getName() + "'");
-            return doRunTask(executorId, environment, environment.getRunner(), triggerText);
+            return doRunTask(executorId, environment, environment.getRunner(), task);
         }
     }
 
-    public static boolean doRunTask(final String executorId, final ExecutionEnvironment environment, ProgramRunner<?> runner, String triggerText) {
+    private static BiPredicate<String, String> triggerTextPredicate(String triggerCondition) {
+        return switch (triggerCondition) {
+            case "exact" -> String::equals;
+            case "contains" -> String::contains;
+            case "startsWith" -> String::startsWith;
+            case "endsWith" -> (text, triggerText) -> text.endsWith(triggerText) || text.endsWith(triggerText + "\n") || text.endsWith(triggerText + "\r\n");
+            default -> (text, triggerText) -> false;
+        };
+    }
+
+    public static boolean doRunTask(final String executorId, final ExecutionEnvironment environment, ProgramRunner<?> runner, RunConfigurableBeforeRunTask task) {
         final Semaphore targetDone = new Semaphore();
         final Ref<Boolean> result = new Ref<>(false);
         final Disposable disposable = Disposer.newDisposable();
+        final BiPredicate<String, String> triggerTextPredicate = triggerTextPredicate(task.getTriggerCondition());
 
         ProcessListener outputListener = new ProcessListener() {
             @Override
             public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
-                if (event.getText().contains(triggerText)) {
+                if (triggerTextPredicate.test(event.getText(), task.getTriggerText())) {
                     result.set(true);
                     targetDone.up();
                 }
@@ -248,12 +267,8 @@ public final class TextTriggerBeforeRunProvider
                     result.set(false);
                     targetDone.up();
 
-                    handler.notifyTextAvailable("Trigger Text not encountered, cancelling execution", ProcessOutputTypes.STDERR);
-                    Notification notification = NotificationGroupManager.getInstance()
-                            .getNotificationGroup("BeforeLaunchTextTrigger")
-                            .createNotification("BeforeLaunchTextTrigger", "Trigger Text not encountered, cancelling execution", NotificationType.WARNING);
-                    notification.setIcon(AllIcons.RunConfigurations.TestState.Yellow2);
-                    notification.notify(environmentLocal.getProject());
+                    handler.notifyTextAvailable(TRIGGER_CONDITION_ERROR, ProcessOutputTypes.STDERR);
+                    TRIGGER_CONDITION_NOTIFICATION.notify(environmentLocal.getProject());
                 }
             }
         });
@@ -287,12 +302,21 @@ public final class TextTriggerBeforeRunProvider
 
     public final class RunConfigurableBeforeRunTask extends BeforeRunTask<RunConfigurableBeforeRunTask> {
         private final TypeNameTarget typeNameTarget = new TypeNameTarget();
+        private String triggerCondition = "exact";
         private String triggerText = "";
 
         private Pair<@Nullable RunnerAndConfigurationSettings, @Nullable ExecutionTarget> mySettingsWithTarget;
 
         RunConfigurableBeforeRunTask() {
             super(ID);
+        }
+
+        public String getTriggerCondition() {
+            return triggerCondition;
+        }
+
+        public void setTriggerCondition(String triggerCondition) {
+            this.triggerCondition = triggerCondition;
         }
 
         public String getTriggerText() {
@@ -318,6 +342,9 @@ public final class TextTriggerBeforeRunProvider
             if (triggerText != null) {
                 element.setAttribute("trigger_text", triggerText);
             }
+            if (triggerCondition != null) {
+                element.setAttribute("trigger_condition", triggerCondition);
+            }
         }
 
         @Override
@@ -328,6 +355,7 @@ public final class TextTriggerBeforeRunProvider
             typeNameTarget.setType(element.getAttributeValue("run_configuration_type"));
             typeNameTarget.setTargetId(element.getAttributeValue("run_configuration_target"));
             triggerText = element.getAttributeValue("trigger_text");
+            triggerCondition = element.getAttributeValue("trigger_condition");
 
             mySettingsWithTarget = null;
         }
