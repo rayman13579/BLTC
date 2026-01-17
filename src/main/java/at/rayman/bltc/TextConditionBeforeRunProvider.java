@@ -1,4 +1,3 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package at.rayman.bltc;
 
 import com.intellij.execution.*;
@@ -41,9 +40,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 
-/**
- * @author Vassiliy Kudryashov
- */
 public final class TextConditionBeforeRunProvider
         extends BeforeRunTaskProvider<TextConditionBeforeRunProvider.TextConditionBeforeRunTask>
         implements DumbAware {
@@ -320,6 +316,15 @@ public final class TextConditionBeforeRunProvider
         }
 
         @Override
+        public BeforeRunTask clone() {
+            TextConditionBeforeRunTask task = new TextConditionBeforeRunTask();
+            task.state = this.state;
+            task.settings = this.settings;
+            task.target = this.target;
+            return task;
+        }
+
+        @Override
         public String toString() {
             return "TriggerConditionBeforeRunTask{name = " + state.getName() + "}";
         }
@@ -329,14 +334,15 @@ public final class TextConditionBeforeRunProvider
             if (o == null || getClass() != o.getClass()) return false;
             if (!super.equals(o)) return false;
             TextConditionBeforeRunTask that = (TextConditionBeforeRunTask) o;
-            return Objects.equals(state, that.state);
+            return Objects.equals(state, that.state)
+                    && Objects.equals(settings, that.settings)
+                    && Objects.equals(target, that.target);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(super.hashCode(), state);
+            return Objects.hash(super.hashCode(), state, settings, target);
         }
-
     }
 
 }

@@ -23,7 +23,7 @@ public class TextConditionFragment<T extends RunConfigurationBase<?>> extends Se
                         .anyMatch(t -> t instanceof TextConditionBeforeRunProvider.TextConditionBeforeRunTask)
         );
         //text only wraps if html
-        setHint("<html>Text listened for in before launch task's output</html>");
+        setHint("<html>Text listened for in Before Launch Task's output</html>");
         setActionHint("Automatically selected when Text Condition Before Launch Task is added");
     }
 
