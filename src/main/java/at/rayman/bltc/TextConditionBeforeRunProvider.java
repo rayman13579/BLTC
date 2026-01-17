@@ -15,7 +15,6 @@ import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
 import com.intellij.execution.runners.ProgramRunner;
 import com.intellij.icons.AllIcons;
-import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.Disposable;
@@ -46,17 +45,7 @@ public final class TextConditionBeforeRunProvider
 
     public static final Key<TextConditionBeforeRunTask> ID = Key.create("TextConditionBeforeRunTask");
 
-    private static final String TRIGGER_CONDITION_ERROR = "Trigger Condition not fulfilled, cancelling execution";
-
-    private static final Notification TEXT_CONDITION_NOTIFICATION = NotificationGroupManager.getInstance()
-            .getNotificationGroup("TextConditionBeforeRun")
-            .createNotification("Before launch condition", TRIGGER_CONDITION_ERROR, NotificationType.WARNING)
-            .setIcon(AllIcons.RunConfigurations.TestState.Yellow2);
-
-    private static final Notification BEFORE_LAUNCH_NOT_FOUND_NOTIFICATION = NotificationGroupManager.getInstance()
-            .getNotificationGroup("TextConditionBeforeRun")
-            .createNotification("Before launch condition", "Before launch configuration not found", NotificationType.WARNING)
-            .setIcon(AllIcons.RunConfigurations.TestState.Yellow2);
+    private static final String TRIGGER_CONDITION_ERROR = "Text Condition not fulfilled, cancelling execution";
 
     private final Project project;
 
@@ -142,7 +131,7 @@ public final class TextConditionBeforeRunProvider
     public boolean executeTask(final @NotNull DataContext dataContext, @NotNull RunConfiguration configuration, final @NotNull ExecutionEnvironment env, @NotNull TextConditionBeforeRunProvider.TextConditionBeforeRunTask task) {
         RunnerAndConfigurationSettings settings = task.getSettings();
         if (settings == null) {
-            BEFORE_LAUNCH_NOT_FOUND_NOTIFICATION.notify(project);
+            showNotification("Before launch configuration not found");
             return false;
         }
         RunConfiguration beforeRunConfiguration = settings.getConfiguration();
@@ -232,7 +221,7 @@ public final class TextConditionBeforeRunProvider
                     conditionPassed.up();
 
                     handler.notifyTextAvailable(TRIGGER_CONDITION_ERROR, ProcessOutputTypes.STDERR);
-                    TEXT_CONDITION_NOTIFICATION.notify(environmentLocal.getProject());
+                    showNotification(TRIGGER_CONDITION_ERROR);
                 }
             }
         });
@@ -266,6 +255,14 @@ public final class TextConditionBeforeRunProvider
             case "endsWith" -> (text, triggerText) -> text.endsWith(triggerText) || text.trim().endsWith(triggerText);
             default -> (text, triggerText) -> false;
         };
+    }
+
+    private void showNotification(String message) {
+        NotificationGroupManager.getInstance()
+                .getNotificationGroup("TextConditionBeforeRun")
+                .createNotification("Before launch condition", message, NotificationType.WARNING)
+                .setIcon(AllIcons.RunConfigurations.TestState.Yellow2)
+                .notify(project);
     }
 
     public final class TextConditionBeforeRunTask extends BeforeRunTask<TextConditionBeforeRunTask> implements PersistentStateComponent<TextConditionState> {
